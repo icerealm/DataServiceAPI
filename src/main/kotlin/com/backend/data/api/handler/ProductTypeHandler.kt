@@ -15,6 +15,14 @@ import reactor.core.publisher.Mono
 class ProductTypeHandler(@Autowired private val productTypeRepository: ProductTypeRepository,
                          @Autowired private val productRepository: ProductRepository) {
 
+    fun getProductType(req: ServerRequest): Mono<ServerResponse> {
+        val notFound = ServerResponse.notFound().build()
+        val id = req.pathVariable("id");
+        return productRepository.findById(id).flatMap { productType ->
+            ServerResponse.ok().body(Mono.just(productType))
+        }.switchIfEmpty(notFound);
+    }
+
     fun getAllActiveProductType(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
         return productTypeRepository.findAllProductWhereEnableFlg(true).collectList().flatMap {

@@ -34,6 +34,7 @@ class AppRoutes{
         (accept(MediaType.APPLICATION_JSON) and "/productTypes").nest {
             GET("/", productTypeHandler::getAllActiveProductType)
             POST("/", productTypeHandler::addProductType)
+            GET("/", productHandler::getProduct)
             PUT("/{id}", productTypeHandler::updateProductType)
             DELETE("/{id}", productTypeHandler::deleteProductType)
         }

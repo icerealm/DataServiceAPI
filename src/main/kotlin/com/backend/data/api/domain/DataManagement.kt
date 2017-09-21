@@ -27,7 +27,7 @@ data class ProductType @PersistenceConstructor
           constructor(@Id var id: String? = null,
                       var name: String,
                       var description: String? = null,
-                      var enableFlag: Boolean? = null,
+                      var enableFlag: Boolean? = true,
                       var revisedDate: LocalDateTime? = null)
 
 @Document(collection="Product")
