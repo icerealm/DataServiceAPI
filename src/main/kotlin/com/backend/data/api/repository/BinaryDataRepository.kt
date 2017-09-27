@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.ReactiveMongoOperations
 import org.springframework.stereotype.Repository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.LocalDateTime
 
 /**
  * Created by jakkritsittiwerapong on 9/13/2017 AD.
@@ -24,10 +25,14 @@ class BinaryDataRepositoryImpl
 
     override fun findAll(): Flux<BinaryData> = mongoOpr.findAll(BinaryData::class.java);
 
-    override fun save(binData: BinaryData): Mono<BinaryData> = mongoOpr.save(binData)
+    override fun save(binData: BinaryData): Mono<BinaryData> {
+        binData.revisedDate = LocalDateTime.now()
+        return mongoOpr.save(binData)
+    }
 
     override fun findById(id: String): Mono<BinaryData> = mongoOpr.findById(id, BinaryData::class.java)
 
     override fun delete(binData: BinaryData): Mono<DeleteResult> =  mongoOpr.remove(binData)
 
 }
+

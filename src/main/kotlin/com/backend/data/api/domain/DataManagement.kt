@@ -10,6 +10,7 @@ import java.time.LocalDateTime
  * Created by jakkritsittiwerapong on 9/10/2017 AD.
  */
 
+const val BAHT:String = "baht"
 
 @Document(collection="Stock")
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -18,9 +19,11 @@ data class Stock @PersistenceConstructor constructor(val id: String? = null, val
 @Document(collection="BinaryData")
 data class BinaryData @PersistenceConstructor
           constructor(@Id val id: String? = null,
-                      var path: String,
-                      var fileName: String,
-                      var fileType: String);
+                      var path: String? = null,
+                      var fileName: String? = null,
+                      var fileType: String? = null,
+                      var revisedDate: LocalDateTime? = null,
+                      var reference: ReferenceObject? = null);
 
 @Document(collection = "ProductType")
 data class ProductType @PersistenceConstructor
@@ -37,9 +40,18 @@ data class Product @PersistenceConstructor
         @Id var id: String? = null,
         var name: String,
         var description: String? = null,
-        var binaryDataList: List<BinaryData>? = null,
         var enableFlag: Boolean? = true,
         var revisedDate: LocalDateTime? = null,
-        var type: String? = null
+        var type: String? = null,
+        var price: Price? = Price(0, 0, BAHT)
 );
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class ReferenceObject constructor( var referenceId: String? = null,
+                                        var referenceObjType: String? = null)
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class Price
+        constructor(var major: Int? = null,
+                    var minor: Int? = null,
+                    var type: String? = null )

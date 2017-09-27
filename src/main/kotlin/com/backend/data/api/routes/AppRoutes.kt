@@ -20,9 +20,11 @@ class AppRoutes{
 
     @Bean
     fun productApi() = router {
+        (accept(MediaType.MULTIPART_FORM_DATA) and "/products").nest {
+            POST("/", productHandler::addProductWithFiles)
+        }
         (accept(MediaType.APPLICATION_JSON) and "/products").nest{
             GET("/", productHandler::getAllActiveProduct)
-            POST("/", productHandler::addProduct)
             GET("/{id}", productHandler::getProduct)
             PUT("/{id}", productHandler::updateProduct)
             DELETE("/{id}", productHandler::deleteProduct)
@@ -34,7 +36,7 @@ class AppRoutes{
         (accept(MediaType.APPLICATION_JSON) and "/productTypes").nest {
             GET("/", productTypeHandler::getAllActiveProductType)
             POST("/", productTypeHandler::addProductType)
-            GET("/", productHandler::getProduct)
+            GET("/{id}", productTypeHandler::getActiveProductType)
             PUT("/{id}", productTypeHandler::updateProductType)
             DELETE("/{id}", productTypeHandler::deleteProductType)
         }

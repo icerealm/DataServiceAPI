@@ -18,14 +18,22 @@ class ProductTypeHandler(@Autowired private val productTypeRepository: ProductTy
     fun getProductType(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
-        return productRepository.findById(id).flatMap { productType ->
+        return productTypeRepository.findById(id).flatMap { productType ->
+            ServerResponse.ok().body(Mono.just(productType))
+        }.switchIfEmpty(notFound);
+    }
+
+    fun getActiveProductType(req: ServerRequest): Mono<ServerResponse> {
+        val notFound = ServerResponse.notFound().build()
+        val id = req.pathVariable("id");
+        return productTypeRepository.findByIdAndFlg(id, true).flatMap { productType ->
             ServerResponse.ok().body(Mono.just(productType))
         }.switchIfEmpty(notFound);
     }
 
     fun getAllActiveProductType(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
-        return productTypeRepository.findAllProductWhereEnableFlg(true).collectList().flatMap {
+        return productTypeRepository.findAllProductTypeWhereEnableFlg(true).collectList().flatMap {
             productTypes -> ServerResponse.ok().body(Mono.just(productTypes))
         }.switchIfEmpty(notFound)
     }
