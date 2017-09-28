@@ -3,6 +3,7 @@ package com.backend.data.api.handler
 import com.backend.data.api.domain.*
 import com.backend.data.api.repository.BinaryDataRepository
 import com.backend.data.api.repository.ProductRepository
+import com.backend.data.api.repository.ProductTypeRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 
 import org.springframework.web.reactive.function.BodyExtractors
@@ -29,15 +30,29 @@ import java.io.IOException
  */
 @Component
 class ProductHandler(@Autowired private val productRepo: ProductRepository,
+                     @Autowired private val productTypeRepo: ProductTypeRepository,
                      @Autowired private val binaryDataRepo: BinaryDataRepository) {
 
     @Value("\${file.dir}")
     private val dir: String? = null
 
+    private fun convertToSystemFileName(part: FilePart): String {
+        var tmpFile = File(part.filename())
+        return tmpFile.nameWithoutExtension + "." +
+                System.currentTimeMillis() + "." +
+                tmpFile.extension
+    }
+
+    private fun createDestinationFile(product: Product, filename: String): File {
+        var destFile = File("${dir}/${product.id}/${filename}")
+        destFile.createNewFile()
+        return destFile
+    }
+
     fun addProduct(req: ServerRequest): Mono<ServerResponse> {
-        var productToBeCreated = req.bodyToMono(Product::class.java)
-        return productToBeCreated.flatMap{ product -> ServerResponse.status(HttpStatus.CREATED)
-                                                        .body(productRepo.save(product)) }
+        var productToBeCreated = req.bodyToMono(ProductDTO::class.java)
+        return productToBeCreated.flatMap{ dto -> ServerResponse.status(HttpStatus.CREATED)
+                                                        .body(productRepo.save(Product.fromDto(dto))) }
     }
 
     fun addProductWithFiles(req: ServerRequest):Mono<ServerResponse> {
@@ -54,34 +69,28 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
                 else if ( item.key == "description")
                     product.description = data.value()
                 else if ( item.key == "type")
-                    product.type = data.value()
+                    product.type = mapper.readValue(data.value(), ProductTypeDTO::class.java)
                 else if ( item.key == "price")
                     product.price = mapper.readValue(data.value(), Price::class.java)
             }
-
-            productRepo.findByNameAndType(product.name, product.type).collectList().flatMap { list ->
+            productRepo.findByName(product.name).collectList().flatMap { list ->
                 if (list.isEmpty()){
                     ServerResponse.ok().body(
-                            productRepo.save(product).flatMap { savedProduct ->
-                                images.forEach { image ->
-                                    try {
-                                        var part: FilePart = image.value as FilePart
-                                        var destFile = File(dir + "/" + part.filename())
-                                        destFile.createNewFile()
-                                        part.transferTo(destFile)
-                                        var binData = BinaryData()
-                                        binData.fileName = destFile.nameWithoutExtension
-                                        binData.fileType = destFile.extension
-                                        binData.path = destFile.path
-                                        binData.reference = ReferenceObject(savedProduct.id, Product::class.java.simpleName)
-                                        binaryDataRepo.save(binData).subscribe()
-                                    }
-                                    catch(e: Exception){
-                                        e.printStackTrace()
-                                    }
-                                }
-                                Mono.just(savedProduct)
+                        productRepo.save(product).flatMap { savedProduct ->
+                            images.forEach { image ->
+                                var part: FilePart = image.value as FilePart
+                                var tmpFile = File(part.filename())
+                                var destFile = createDestinationFile(product, convertToSystemFileName(part))
+                                part.transferTo(destFile)
+                                var binData = BinaryData()
+                                binData.fileName = tmpFile.nameWithoutExtension
+                                binData.fileType = tmpFile.extension
+                                binData.path = destFile.path
+                                binData.reference = ReferenceObject(savedProduct.id, Product::class.java.simpleName)
+                                binaryDataRepo.save(binData).subscribe() //triggering to save
                             }
+                            Mono.just(savedProduct)
+                        }
                     )
                 }
                 else {
@@ -96,10 +105,10 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
 
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
-        val updatedProduct = req.bodyToMono(Product::class.java);
+        val updatedProduct = req.bodyToMono(ProductDTO::class.java);
         return productRepo.findById(id).flatMap { existingProduct ->
-            updatedProduct.flatMap { product -> ServerResponse.status(HttpStatus.OK).body(
-                    productRepo.update(existingProduct, product))
+            updatedProduct.flatMap { dto -> ServerResponse.status(HttpStatus.OK).body(
+                    productRepo.update(existingProduct, Product.fromDto(dto)))
             }
         }.switchIfEmpty(notFound)
     }
@@ -107,7 +116,7 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
     fun getProduct(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
-        return productRepo.findById(id).flatMap { product -> ServerResponse.ok().body(Mono.just(product)) }
+        return productRepo.findById(id).flatMap { product -> ServerResponse.ok().body(Mono.just(product.toDto())) }
                                        .switchIfEmpty(notFound)
     }
 
@@ -115,21 +124,25 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
         return productRepo.findByIdAndFlg(id, true).flatMap { product ->
-            ServerResponse.ok().body(Mono.just(product))
+            ServerResponse.ok().body(Mono.just(product.toDto()))
         }.switchIfEmpty(notFound);
     }
 
     fun getAllProduct(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
-        return productRepo.findAll().collectList().flatMap { products -> ServerResponse.ok().body(Mono.just(products)) }
-                                                  .switchIfEmpty(notFound)
+        return productRepo.findAll().collectList().flatMap { products ->
+            var dtoList = products.map { product -> product.toDto() }
+            ServerResponse.ok().body(Mono.just(dtoList))
+        }.switchIfEmpty(notFound)
     }
 
     fun getAllActiveProduct(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
         return productRepo.findAllProductWhereEnableFlg(true)
-                          .collectList().flatMap { products -> ServerResponse.ok().body(Mono.just(products)) }
-                                        .switchIfEmpty(notFound)
+                          .collectList().flatMap { products ->
+            var dtoList = products.map { product -> product.toDto() }
+            ServerResponse.ok().body(Mono.just(dtoList))
+        }.switchIfEmpty(notFound)
     }
 
     fun deleteProduct(req: ServerRequest): Mono<ServerResponse> {

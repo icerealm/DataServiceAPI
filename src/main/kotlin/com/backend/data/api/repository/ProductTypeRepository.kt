@@ -14,7 +14,7 @@ import java.time.LocalDateTime
 interface ProductTypeRepository {
     fun findAll(): Flux<ProductType>
     fun findAllProductTypeWhereEnableFlg(flg: Boolean): Flux<ProductType>
-    fun findById(id: String): Mono<ProductType>
+    fun findById(id: String?): Mono<ProductType>
     fun findByIdAndFlg(id: String, enableFlg: Boolean): Mono<ProductType>
     fun save(productType: ProductType): Mono<ProductType>
     fun update(existingProductType: ProductType, productTypeTobeUpdated: ProductType): Mono<ProductType>
@@ -30,7 +30,7 @@ class ProductTypeRepositoryImpl
     override fun findAllProductTypeWhereEnableFlg(flg: Boolean): Flux<ProductType> =
             mongoOpr.find(Query.query(Criteria.where("enableFlag").`is`(flg)), ProductType::class.java)
 
-    override fun findById(id: String): Mono<ProductType> = mongoOpr.findById(id, ProductType::class.java)
+    override fun findById(id: String?): Mono<ProductType> = mongoOpr.findById(id, ProductType::class.java)
 
     override fun findByIdAndFlg(id: String, enableFlg: Boolean): Mono<ProductType> {
         val result: Flux<ProductType> = mongoOpr.find(Query.query(Criteria.where("id").`is`(id)

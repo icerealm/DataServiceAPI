@@ -18,9 +18,9 @@ interface ProductRepository {
     fun findAllProductWhereEnableFlg(flg: Boolean): Flux<Product>
     fun findById(id: String): Mono<Product>
     fun findByIdAndFlg(id: String, enableFlg: Boolean): Mono<Product>
-    fun findByProductType(productType: String): Flux<Product>
-    fun findByName(name: String): Mono<Product>
-    fun findByNameAndType(name: String, type: String?): Flux<Product>
+    fun findByProductType(productType: String?): Flux<Product>
+    fun findByName(name: String?): Flux<Product>
+    fun findByNameAndType(name: String?, type: String?): Flux<Product>
     fun save(product: Product): Mono<Product>
     fun update(existingProduct: Product, product: Product): Mono<Product>
     fun logicalDelete(existingProduct: Product): Mono<Product>
@@ -35,7 +35,7 @@ class ProductRepositoryImpl
     override fun findAllProductWhereEnableFlg(flg: Boolean): Flux<Product> =
             mongoOpr.find(Query.query(Criteria.where("enableFlag").`is`(flg)), Product::class.java)
 
-    override fun findByProductType(productType: String): Flux<Product> =
+    override fun findByProductType(productType: String?): Flux<Product> =
             mongoOpr.find(Query.query(Criteria.where("type").`is`(productType)), Product::class.java)
 
     override fun save(product: Product): Mono<Product> {
@@ -56,11 +56,11 @@ class ProductRepositoryImpl
         return result.next();
     }
 
-    override fun findByName(name: String): Mono<Product> {
-        return mongoOpr.find(Query.query(Criteria.where("name").`is`(name)), Product::class.java).singleOrEmpty()
+    override fun findByName(name: String?): Flux<Product> {
+        return mongoOpr.find(Query.query(Criteria.where("name").`is`(name)), Product::class.java)
     }
 
-    override fun findByNameAndType(name: String, type: String?): Flux<Product> {
+    override fun findByNameAndType(name: String?, type: String?): Flux<Product> {
         return mongoOpr.find(Query.query(Criteria.where("name").`is`(name)
                                     .and("type").`is`(type)), Product::class.java)
     }

@@ -1,6 +1,7 @@
 package com.backend.data.api.handler
 
 import com.backend.data.api.domain.ProductType
+import com.backend.data.api.domain.ProductTypeDTO
 import com.backend.data.api.repository.ProductRepository
 import com.backend.data.api.repository.ProductTypeRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -19,7 +20,7 @@ class ProductTypeHandler(@Autowired private val productTypeRepository: ProductTy
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
         return productTypeRepository.findById(id).flatMap { productType ->
-            ServerResponse.ok().body(Mono.just(productType))
+            ServerResponse.ok().body(Mono.just(productType.toDto()))
         }.switchIfEmpty(notFound);
     }
 
@@ -27,31 +28,33 @@ class ProductTypeHandler(@Autowired private val productTypeRepository: ProductTy
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
         return productTypeRepository.findByIdAndFlg(id, true).flatMap { productType ->
-            ServerResponse.ok().body(Mono.just(productType))
+            ServerResponse.ok().body(Mono.just(productType.toDto()))
         }.switchIfEmpty(notFound);
     }
 
     fun getAllActiveProductType(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
         return productTypeRepository.findAllProductTypeWhereEnableFlg(true).collectList().flatMap {
-            productTypes -> ServerResponse.ok().body(Mono.just(productTypes))
+            productTypes ->
+            var dtoList = productTypes.map { aProductType -> aProductType.toDto() }
+            ServerResponse.ok().body(Mono.just(dtoList))
         }.switchIfEmpty(notFound)
     }
 
     fun addProductType(req: ServerRequest): Mono<ServerResponse> {
-        var productTypeTobeCreated = req.bodyToMono(ProductType::class.java)
-        return productTypeTobeCreated.flatMap { productType -> ServerResponse.status(HttpStatus.CREATED)
-                                                                .body(productTypeRepository.save(productType)) }
+        var productTypeTobeCreated = req.bodyToMono(ProductTypeDTO::class.java)
+        return productTypeTobeCreated.flatMap { dto -> ServerResponse.status(HttpStatus.CREATED)
+                                                                .body(productTypeRepository.save(ProductType.fromDto(dto))) }
     }
     fun updateProductType(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
         val id = req.pathVariable("id");
-        val productTypeMono = req.bodyToMono(ProductType::class.java)
+        val productTypeMono = req.bodyToMono(ProductTypeDTO::class.java)
 
         return productTypeRepository.findById(id).flatMap { existingProductType ->
-            productTypeMono.flatMap { productType ->
+            productTypeMono.flatMap { dto ->
                 ServerResponse.status(HttpStatus.OK).body(
-                        productTypeRepository.update(existingProductType, productType))
+                        productTypeRepository.update(existingProductType, ProductType.fromDto(dto)))
             }
         }.switchIfEmpty(notFound)
     }

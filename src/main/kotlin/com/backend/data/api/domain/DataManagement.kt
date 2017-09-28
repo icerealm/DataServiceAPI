@@ -28,23 +28,57 @@ data class BinaryData @PersistenceConstructor
 @Document(collection = "ProductType")
 data class ProductType @PersistenceConstructor
           constructor(@Id var id: String? = null,
-                      var name: String,
+                      var name: String? = null,
                       var description: String? = null,
                       var enableFlag: Boolean? = true,
-                      var revisedDate: LocalDateTime? = null)
+                      var revisedDate: LocalDateTime? = null) {
+
+    fun toDto():ProductTypeDTO = ProductTypeDTO(
+            id = this.id,
+            name = this.name,
+            description = this.description
+    )
+
+    companion object {
+        fun fromDto(dto: ProductTypeDTO) = ProductType(
+                id = dto.id,
+                name = dto.name,
+                description = dto.description
+        )
+    }
+}
 
 @Document(collection="Product")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Product @PersistenceConstructor
         constructor(
         @Id var id: String? = null,
-        var name: String,
+        var name: String? = "",
         var description: String? = null,
         var enableFlag: Boolean? = true,
         var revisedDate: LocalDateTime? = null,
-        var type: String? = null,
+        var type: ProductTypeDTO? = null,
         var price: Price? = Price(0, 0, BAHT)
-);
+    )
+{
+    fun toDto(): ProductDTO = ProductDTO(
+            id = this.id,
+            name = this.name,
+            description = this.description,
+            type = this.type,
+            price = this.price
+    )
+
+    companion object {
+        fun fromDto(dto: ProductDTO) = Product(
+                id = dto.id,
+                name = dto.name,
+                description = dto.description,
+                type = dto.type,
+                price = dto.price
+        )
+    }
+}
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ReferenceObject constructor( var referenceId: String? = null,
