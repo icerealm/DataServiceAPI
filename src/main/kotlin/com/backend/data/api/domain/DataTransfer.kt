@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProductDTO constructor(
-        var id: String?,
-        var name: String?,
+        var id: String? = null,
+        var name: String? = null,
         var description: String? = null,
         var type: ProductTypeDTO? = null,
         var price: Price? = Price(0, 0, BAHT)
@@ -14,7 +14,7 @@ data class ProductDTO constructor(
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class ProductTypeDTO constructor(
-        var id: String?,
-        var name: String?,
+        var id: String? = null,
+        var name: String? = null,
         var description: String? = null
 )

@@ -39,13 +39,16 @@ class ProductRepositoryImpl
             mongoOpr.find(Query.query(Criteria.where("type").`is`(productType)), Product::class.java)
 
     override fun save(product: Product): Mono<Product> {
-        if (!product.name.isNullOrEmpty()) {
-            product.revisedDate = LocalDateTime.now()
-            return mongoOpr.save(product)
+        try {
+            if (!product.name.isNullOrEmpty()) {
+                product.revisedDate = LocalDateTime.now()
+                return mongoOpr.save(product)
+            }
         }
-        else {
-            return Mono.empty()
+        catch (e: Exception){
+            e.printStackTrace()
         }
+        return Mono.empty()
     }
 
     override fun findById(id: String): Mono<Product> = mongoOpr.findById(id, Product::class.java)

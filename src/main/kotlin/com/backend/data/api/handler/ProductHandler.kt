@@ -9,11 +9,9 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.http.HttpStatus
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.http.codec.multipart.FormFieldPart
-import org.springframework.http.codec.multipart.Part
 
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -45,6 +43,7 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
 
     private fun createDestinationFile(product: Product, filename: String): File {
         var destFile = File("${dir}/${product.id}/${filename}")
+        destFile.mkdirs()
         destFile.createNewFile()
         return destFile
     }
@@ -64,14 +63,18 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
             var product = Product(null,"")
             fields.forEach { item ->
                 var data = item.value as FormFieldPart
-                if (item.key == "name")
+                if (item.key == "name") {
                     product.name = data.value()
-                else if ( item.key == "description")
+                }
+                else if ( item.key == "description") {
                     product.description = data.value()
-                else if ( item.key == "type")
+                }
+                else if ( item.key == "type") {
                     product.type = mapper.readValue(data.value(), ProductTypeDTO::class.java)
-                else if ( item.key == "price")
+                }
+                else if ( item.key == "price") {
                     product.price = mapper.readValue(data.value(), Price::class.java)
+                }
             }
             productRepo.findByName(product.name).collectList().flatMap { list ->
                 if (list.isEmpty()){

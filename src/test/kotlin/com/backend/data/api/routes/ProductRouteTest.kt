@@ -2,7 +2,9 @@ package com.backend.data.api.routes
 
 import com.backend.data.api.domain.Product
 import com.backend.data.api.handler.ProductHandler
+import com.backend.data.api.repository.BinaryDataRepository
 import com.backend.data.api.repository.ProductRepository
+import com.backend.data.api.repository.ProductTypeRepository
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
@@ -22,6 +24,10 @@ import java.time.LocalDateTime
 class ProductRouteTest: IntegrateTest() {
     @Mock
     lateinit var productRepo: ProductRepository
+    @Mock
+    lateinit var productTypeRepo: ProductTypeRepository
+    @Mock
+    lateinit var binRepo: BinaryDataRepository
     lateinit var productHandler: ProductHandler
     lateinit var sut: AppRoutes //system under test
     lateinit var webClient: WebTestClient
@@ -29,7 +35,7 @@ class ProductRouteTest: IntegrateTest() {
 
     @Before
     fun setup() {
-        productHandler = ProductHandler(productRepo)
+        productHandler = ProductHandler(productRepo, productTypeRepo, binRepo)
         sut = AppRoutes()
         sut.productHandler = productHandler
         webClient = WebTestClient.bindToRouterFunction(sut.productApi()).configureClient()
