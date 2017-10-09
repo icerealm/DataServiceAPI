@@ -3,7 +3,6 @@ package com.backend.data.api.handler
 import com.backend.data.api.domain.*
 import com.backend.data.api.repository.BinaryDataRepository
 import com.backend.data.api.repository.ProductRepository
-import com.backend.data.api.repository.ProductTypeRepository
 import com.fasterxml.jackson.databind.ObjectMapper
 
 import org.springframework.web.reactive.function.BodyExtractors
@@ -18,9 +17,7 @@ import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.body
 import reactor.core.publisher.Mono
-import reactor.core.publisher.toMono
 import java.io.File
-import java.io.IOException
 
 
 /**
@@ -28,7 +25,6 @@ import java.io.IOException
  */
 @Component
 class ProductHandler(@Autowired private val productRepo: ProductRepository,
-                     @Autowired private val productTypeRepo: ProductTypeRepository,
                      @Autowired private val binaryDataRepo: BinaryDataRepository) {
 
     @Value("\${file.dir}")
@@ -42,8 +38,9 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
     }
 
     private fun createDestinationFile(product: Product, filename: String): File {
+        val path = File("${dir}/${product.id}")
+        path.mkdirs()
         var destFile = File("${dir}/${product.id}/${filename}")
-        destFile.mkdirs()
         destFile.createNewFile()
         return destFile
     }
@@ -150,9 +147,18 @@ class ProductHandler(@Autowired private val productRepo: ProductRepository,
 
     fun deleteProduct(req: ServerRequest): Mono<ServerResponse> {
         val notFound = ServerResponse.notFound().build()
-        val id = req.pathVariable("id");
+        val id = req.pathVariable("id")
         return productRepo.findById(id).flatMap { product -> ServerResponse.status(HttpStatus.ACCEPTED)
                                                                             .body(productRepo.logicalDelete(product)) }
                                        .switchIfEmpty(notFound)
+    }
+
+    fun getImagesInProduct(req: ServerRequest): Mono<ServerResponse> {
+        val notFound = ServerResponse.notFound().build()
+        val id = req.pathVariable("id")
+        return binaryDataRepo.findByReferenceObjectId(id, Product::class.java.simpleName)
+                                .collectList().flatMap { binariesData ->
+            ServerResponse.ok().body(Mono.just(binariesData))
+        }.switchIfEmpty(notFound)
     }
 }

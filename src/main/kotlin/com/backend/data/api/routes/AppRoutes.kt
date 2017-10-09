@@ -1,5 +1,6 @@
 package com.backend.data.api.routes
 
+import com.backend.data.api.handler.BinaryDataHandler
 import com.backend.data.api.handler.ProductHandler
 import com.backend.data.api.handler.ProductTypeHandler
 import org.springframework.beans.factory.annotation.Autowired
@@ -17,6 +18,8 @@ class AppRoutes{
 
     @Autowired lateinit var productHandler: ProductHandler
     @Autowired lateinit var productTypeHandler: ProductTypeHandler
+    @Autowired lateinit var binDataHandler: BinaryDataHandler
+
 
     @Bean
     fun productApi() = router {
@@ -26,6 +29,7 @@ class AppRoutes{
         (accept(MediaType.APPLICATION_JSON) and "/products").nest{
             GET("/", productHandler::getAllActiveProduct)
             GET("/{id}", productHandler::getProduct)
+            GET("/{id}/images", productHandler::getImagesInProduct)
             PUT("/{id}", productHandler::updateProduct)
             DELETE("/{id}", productHandler::deleteProduct)
         }
@@ -39,6 +43,13 @@ class AppRoutes{
             GET("/{id}", productTypeHandler::getActiveProductType)
             PUT("/{id}", productTypeHandler::updateProductType)
             DELETE("/{id}", productTypeHandler::deleteProductType)
+        }
+    }
+
+    @Bean
+    fun binaryApi() = router {
+        (accept(MediaType.APPLICATION_JSON) and "/binaryData").nest {
+            GET("/{id}", binDataHandler::getBytesData)
         }
     }
 }
